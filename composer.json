@@ -1,0 +1,22 @@
+{
+    "name": "cyneek/yii2-fileUpload",
+    "description": "File upload manager for yii2 that links ActiveRecord objets to files and galleries",
+    "keywords": ["yii", "yii2", "file", "upload"],
+    "type": "yii2-extension",
+    "license": "BSD",
+    "authors": [
+        {
+            "name": "Joseba Juániz",
+            "email": "joseba.juaniz@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*",
+        "php": ">=5.3.6",
+        "league/flysystem": "~0.5",
+        "yurkinx/yii2-image": "dev-master"
+    },
+    "autoload": {
+        "psr-4": { "cyneek\\yii2\\fileupload\\": "" }
+    }
+}
