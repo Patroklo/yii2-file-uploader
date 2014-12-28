@@ -52,20 +52,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## Instalation
 
 * Install [Yii 2](http://www.yiiframework.com/download)
-* Install package via [composer](http://getcomposer.org/download/) `"cyneek/yii2-routes": "dev-master"`
+* Install package via [composer](http://getcomposer.org/download/) `"cyneek/yii2-fileupload": "dev-master"`
 * Update config file _'config/web.php'_
 
 ```
- 'components' => [
-					'route' => [
-						'class' => 'cyneek\yii2\routes\components\route',
-					],
-	]
-	...
     'modules' => [
-		'routes' => [
-            'class' => 'cyneek\yii2\routes\Module',
-			'routes_dir' => array('../routes')
+		'fileupload' => [
+            'class' => 'cyneek\yii2\fileupload\Module'
 		]
 		// set custom modules here
     ],
