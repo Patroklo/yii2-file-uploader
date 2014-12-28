@@ -1,13 +1,13 @@
 <?php
 
-namespace cyneek\yii2\fileUpload\models;
+namespace cyneek\yii2\fileupload\models;
 
 use Yii;
 use yii\db\ActiveRecord;
 
 /**
  * Class FileOwnerActiveRecord
- * @package cyneek\yii2\fileUpload\models
+ * @package cyneek\yii2\fileupload\models
  */
 class FileOwnerActiveRecord extends ActiveRecord
 {

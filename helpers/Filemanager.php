@@ -1,6 +1,6 @@
 <?php
 
-namespace cyneek\yii2\fileUpload\helpers;
+namespace cyneek\yii2\fileupload\helpers;
 
 use Yii;
 use yii\web\UploadedFile;
@@ -11,6 +11,8 @@ class Filemanager
 	/**
 	 * @param string $model_name
 	 * @param string $instance_name
+	 * 
+	 * @return array|null
 	 */
 	public static function multiUpload($model_name, $instance_name = 'uploaded_file')
 	{
@@ -72,6 +74,8 @@ class Filemanager
 	 * Makes a random string for changing file naming purposes
 	 *
 	 * @param int $length
+	 * 
+	 * @return string
 	 */
 	public static function getRandomFileName($length = 20)
 	{

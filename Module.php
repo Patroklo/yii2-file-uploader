@@ -1,11 +1,11 @@
 <?php
-namespace cyneek\yii2\fileUpload;
+namespace cyneek\yii2\fileupload;
 
 
 use Yii;
 
 /**
- * Fileupload module
+ * fileupload module
  *
  * @author joseba <joseba.juaniz@gmail.com>
  */
@@ -70,8 +70,8 @@ class Module extends \yii\base\Module
     {
         // use single quotes so nothing gets escaped
         return [
-            'FileModel'       => 'cyneek\yii2\fileUpload\models\FileModel',
-            'FileOwnerActiveRecord' => 'cyneek\yii2\fileUpload\models\FileOwnerActiveRecord',
+            'FileModel'       => 'cyneek\yii2\fileupload\models\FileModel',
+            'FileOwnerActiveRecord' => 'cyneek\yii2\fileupload\models\FileOwnerActiveRecord',
         ];
     }
 

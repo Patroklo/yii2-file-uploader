@@ -1,9 +1,9 @@
 <?php
 
-namespace cyneek\yii2\fileUpload\models;
+namespace cyneek\yii2\fileupload\models;
 
-use cyneek\yii2\fileUpload\helpers\Filemanager;
-use cyneek\yii2\fileUpload\helpers\File;
+use cyneek\yii2\fileupload\helpers\Filemanager;
+use cyneek\yii2\fileupload\helpers\File;
 use League\Flysystem\Adapter\Local;
 use League\Flysystem\Filesystem;
 use yii\base\Exception;
@@ -20,7 +20,7 @@ use Yii;
 
 /**
  * Class FileModel
- * @package cyneek\yii2\fileUpload\models
+ * @package cyneek\yii2\fileupload\models
  */
 
 /**

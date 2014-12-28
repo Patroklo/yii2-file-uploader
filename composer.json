@@ -1,5 +1,5 @@
 {
-    "name": "cyneek/yii2-fileUpload",
+    "name": "cyneek/yii2-fileupload",
     "description": "File upload manager for yii2 that links ActiveRecord objets to files and galleries",
     "keywords": ["yii", "yii2", "file", "upload"],
     "type": "yii2-extension",

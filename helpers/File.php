@@ -1,6 +1,6 @@
 <?php
 
-namespace cyneek\yii2\fileUpload\helpers;
+namespace cyneek\yii2\fileupload\helpers;
 
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Cache\Adapter;
