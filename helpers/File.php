@@ -2,8 +2,6 @@
 
 namespace cyneek\yii2\fileUpload\helpers;
 
-
-// cambiar el fichero para que no extienda a gaufrette, rehacer para que haga las gestiones perosnalmente y tal.
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Cache\Adapter;
 use League\Flysystem\FileNotFoundException;
@@ -28,9 +26,6 @@ class File {
 
 	/** @var string */
 	var $exif;
-
-	/** @var integer */
-	var $size;
 
 	/** @var integer */
 	var $timeStamp;
@@ -166,11 +161,12 @@ class File {
 	 */
 	public function getSize()
 	{
-		if (is_null($this->size)) {
-			$data = $this->filesystem->getAdapter()->getSize($this->file->getPath());
-			$this->size = $data['size'];
-		}
-		return $this->size;
+		// given that file size can change, let's not save the data
+		
+		$data = $this->filesystem->getAdapter()->getSize($this->file->getPath());
+		$size = $data['size'];
+		
+		return $size;
 	}
 
 	/**

@@ -9,6 +9,7 @@ use League\Flysystem\Filesystem;
 use yii\base\Exception;
 use yii\base\Event;
 use yii\base\InvalidCallException;
+use yii\base\InvalidParamException;
 use yii\base\Model;
 use yii\behaviors\BlameableBehavior;
 use yii\db\ActiveRecord;
@@ -117,8 +118,7 @@ class FileModel extends ActiveRecord
 										const PRECISE = doesn't keep image ratio)
 	 * 		'offset_x'	=> NULL/int (offset for cropping only),
 	 * 		'offset_y'	=> NULL/int (offset for cropping only),
-	 * 		'size'		=> NULL/bytes (probaly wont be implemented, watches the size of the file and
-	 * 									lowers its quality until it matches the maximum size). 
+	 * 		'size'		=> NULL/bytes
 	 * 
 	 * @var array
 	 */
@@ -522,6 +522,7 @@ class FileModel extends ActiveRecord
 		// if there is an operation defined for the file, it will be launched here.
 		if (!is_null($this->file_operations) and $this->temporary_file->getIsImage())
 		{
+			
 			$image = new \yii\image\drivers\Image_GD($this->temporary_file->getKey());
 			
 			if ($this->file_operations['action'] == 'resize')
@@ -545,9 +546,33 @@ class FileModel extends ActiveRecord
 			{
 				throw new InvalidCallException('[_deployFile] The method '.$this->file_operations['action'].' does not exist.');
 			}
-			
-			// TODO añadir tema de size
-			
+
+			$image->save();
+
+
+			if (array_key_exists('size', $this->file_operations))
+			{
+				
+				// PHP doesn't update file sizes after croping/resizing, it weights the same. So we have to do a tweak
+				// to change the file to force PHP to update the file weight by that
+				
+				$fileWeightResize = new File($this->temporary_file->getFileName(), new Local($this->temporary_file->getPath()));
+
+				$quality = 95;
+
+				if ($fileWeightResize->getSize() > $this->file_operations['size'])
+				{
+					while (($fileWeightResize->getSize() > $this->file_operations['size']) and $quality > 10)
+					{
+						$image->save(NULL, $quality);
+						$quality = $quality - 5;
+						
+						$fileWeightResize = new File($this->temporary_file->getFileName(), new Local($this->temporary_file->getPath()));
+					}
+					
+					$this->temporary_file = $fileWeightResize;
+				}
+			}
 		}
 		
 		$file_manager->write($this->file, $this->temporary_file->getContent());
@@ -572,9 +597,6 @@ class FileModel extends ActiveRecord
 			return;
 		}
 		
-		$class = self::className();
-		$original_data = $this->getAttributes();
-		
 		// delete all the old copies.
 		$this->_deleteCopies();
 
@@ -582,62 +604,71 @@ class FileModel extends ActiveRecord
 		{
 			for ($i = 0; $i < $copies_data['number']; $i++)
 			{
-				/** @var FileModel $model */
-				$model = new $class();
-				
-				$model->is_copy = TRUE;
-				
-				foreach ($original_data as $key => $data)
-				{
-					$model->{$key} = $data;
-				}
-				
-				$model->file_name = Filemanager::getRandomFileName();
-				
-				$model->parent_id = $this->id;
-				
-				$model->uploaded_file = $this->uploaded_file;
-				
-				$model->file_order = 0;
-				
-				$model->updated = 0;
-				
-				$model->id = NULL;
-				
-				$model->save(FALSE);
+				$this->makeCopy();
 			}
 		}
 		elseif (array_key_exists('operations', $copies_data))
 		{
 			foreach ($copies_data['operations'] as $operation)
 			{
-				/** @var FileModel $model */
-				$model = new $class();
-
-				$model->is_copy = TRUE;
-				
-				foreach ($original_data as $key => $data)
-				{
-					$model->{$key} = $data;
-				}
-				
-				$model->file_name = Filemanager::getRandomFileName();
-				
-				$model->parent_id = $this->id;
-				
-				$model->uploaded_file = $this->uploaded_file;
-				
-				$model->file_order = 0;
-				
-				$model->updated = 0;
-				
-				$model->id = NULL;
-				
-				$model->saveAs(['validation' => FALSE, 'operation' => $operation]);
+				$this->makeCopy($operation);
 			}
 		}
 		
 
+	}
+
+	/**
+	 * Makes a copy of the file and adds it into the system as a child of the original object
+	 * If the object is still not saved, then will throw an exception.
+	 * 
+	 * The operation can be a crop or resize operations, as defined at $file_operations
+	 * 
+	 * @param null|array $operation
+	 * @return FileModel
+	 */
+	public function makeCopy($operation = NULL)
+	{
+		$class = self::className();
+		$original_data = $this->getAttributes();
+		
+		if (is_null($this->id))
+		{
+			throw new InvalidParamException('[makeCopy] The object must be first loaded/inserted before making a copy from it.');
+		}
+		
+		/** @var FileModel $model */
+		$model = new $class();
+		
+		$model->is_copy = TRUE;
+		
+		foreach ($original_data as $key => $data)
+		{
+			$model->{$key} = $data;
+		}
+		
+		$model->file_name = Filemanager::getRandomFileName();
+		
+		$model->parent_id = $this->id;
+		
+		$model->uploaded_file = $this->uploaded_file;
+		
+		$model->file_order = 0;
+		
+		$model->updated = 0;
+		
+		$model->id = NULL;
+		
+		if (is_null($operation))
+		{
+			$model->save(FALSE);
+		}
+		else
+		{
+			$model->saveAs(['validation' => FALSE, 'operation' => $operation]);
+		}
+		
+		return $model;
 	}
 
 	/**
@@ -723,9 +754,7 @@ class FileModel extends ActiveRecord
 		{
 			$this->file_operations = $operation;
 		}
-		
-		
-		
+
 		$this->save($validation);
 	}
 	

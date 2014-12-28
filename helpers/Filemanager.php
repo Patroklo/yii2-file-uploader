@@ -2,7 +2,6 @@
 
 namespace cyneek\yii2\fileUpload\helpers;
 
-use cyneek\yii2\fileUpload\models\FileModel;
 use Yii;
 use yii\web\UploadedFile;
 
