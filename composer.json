@@ -13,7 +13,9 @@
     "minimum-stability": "dev",
     "require": {
         "yiisoft/yii2": "*",
-        "php": ">=5.3.6",
+        "php": ">=5.3.6"
+    },
+    "require-dev": {
         "league/flysystem": "~0.5",
         "yurkinx/yii2-image": "dev-master"
     },
