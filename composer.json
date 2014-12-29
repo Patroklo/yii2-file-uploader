@@ -10,12 +10,11 @@
             "email": "joseba.juaniz@gmail.com"
         }
     ],
-    "minimum-stability": "dev",
     "require": {
         "yiisoft/yii2": "*",
         "php": ">=5.3.6",
         "league/flysystem": "~0.5",
-        "yurkinx/yii2-image": "@dev"
+        "yurkinx/yii2-image": "dev-master"
     },
     "autoload": {
         "psr-4": { "cyneek\\yii2\\fileupload\\": "" }
