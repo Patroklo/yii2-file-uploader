@@ -10,7 +10,7 @@
             "email": "joseba.juaniz@gmail.com"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "require": {
         "yiisoft/yii2": "*",
         "php": ">=5.3.6",
