@@ -52,7 +52,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## Instalation
 
 * Install [Yii 2](http://www.yiiframework.com/download)
-* Install package via [composer](http://getcomposer.org/download/) `"cyneek/yii2-fileupload": "dev-master"`
+* Install package via [composer](http://getcomposer.org/download/) 
+		
+		`"cyneek/yii2-fileupload": "dev-master", "yurkinx/yii2-image": "@dev"`
+		 
+		(I haven't managed to install the library in stable versions of Yii 2 because image library and the strange way of working composer has. If someone knows how to do it without adding this superfluous reference to the principal composer.json file, please tell :sweat_smile:).
+		
 * Update config file _'config/web.php'_
 
 ```
@@ -63,231 +68,181 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		// set custom modules here
     ],
 ```
-* Make a _routes_ directory in your @app level.
-* Insert files in this directory using the Route class definition.
+
+* Apply the migration in the migrations directory.
+* Be sure that Php can write on the "web/" directory of your Yii 2 installation.
 * Profit!
 
 
 ## Definition
 
-Note:
+The library will let users to upload or manage files through objects that extend from the FileModel.php model. This file extends ActiveRecord and can be used in database operations and web forms.
+
+These objects must be linked to another object which will be capable of getting all files linked to it through database operations.
+
+This package contains 2 different models:
+
+* FileModel.php : it's the main model. All file objects must extend this archive. To be able to use it properly the developer has to fill some basic configuration data that will be explained later in the readme.
 
-This routing system uses the Yii2 urlManager parameters by default:
+* FileOwnerActiveRecord.php : it's a model that extends ActiveRecord. It can be used to be extended by objects that have files linked to them. It provides syntactic sugar to retrieve one or more files that are linked to them and to link this objects to already existing file objects.
 
-* enablePretttyUrl = TRUE
+The package uses the "flysystem" library, that let's users to work with files in local servers, via ftp, dropbox, and so on, so all this configurations are also potentially available in the FileUploader package to store the files linked to objects. Given that each extended model can have it's own configuration the system can work at the same time with files from AmazonAWS, local, ftp, and so on.
 
-* enableStrictParsing = TRUE
+The fileUpload package also uses a image package that let's developers to manage while uploading image sizing, cropping and so on using GD or Imagick php libraries (depending on your Php installation).
+
+### Setting a File model
+
+To be able to use the package, first you must define a model that will manage a kind of files. Each of these object models will hold a different file that can be linked to any system's model object. But to do this first there must be done some basic configurations.
+
+* Make a new file with a class extending "FileModel".
+
+* Add the following basic configuration data:
+
+	* The "public static function default_values()" method. Must have inside of it a return of an array with a "file_type" string different of every other FileModel that you have ever made in this Yii2 installation and an "upload_path" string that will define the directory where the files will be stored. It's not necessary to be unique, but it's recomended. 
+	
+	For example:
+	
+		return [
+			'file_type'	=> 'name_that_defines_the_model_in_the_database',
+			'upload_path'	=> 'path_where_files_will_be_stored'
+		];
+		
+	This code will make file objects linked to the database with the "name_that_defines_the_model_in_the_database" string and will be stored at the "path_where_files_will_be_stored" directory path. Remember that inside this directory will be a series of subfolders defined as "YYYY"/"MM"/"DD" to keep the files stored in a more tidy way. 
+			
+			
+	* Optional parameter "file_required". It's a boolean that sets the file upload in a web form as required or not. When it's value is "False" Yii2 won't make in the forms obligatory to upload a file in each insert or update operations. It's defined as TRUE by default.
+
+	* Optional method "_copies_data()". Defines if the system will make copies of the uploaded file when the "save()" method it's called.
+	
+	For example:
+	
+		return [
+				'operations' => [
+									['action' => 'resize', 
+									 'height' => '100', 
+									 'width' => 100, 
+									 'size' => 5000]
+								]
+				];
+				
+	This code will make a copy of the uploaded file (it should be an image) that will be resized to 100x100 mantaining it's ratio (one of the sides won't be exactly of 100 pixels) and will drop it's color quality until it reaches 5000 bytes of weight.
 
-* showScriptName = FALSE
+### Setting a FileOwnerActiveRecord type class
 
+It's recomendable to use objects extending FileOwnerActiveRecord when linking them with file objects, the reason it's that this class brings a group of methods that help this object linking and accessing its linked files. If you want to use another type of class with this library, then you'll have to manually make this links and accesses for every different class.
 
-### Basic routing
+To be able to use a FileOwnerActiveRecord extended object then you'll have to:
 
-The basic routing methods will make a new route comprehensible by the Yii2 system.
+* Make a new file with a class extending "FileOwnerActiveRecord".
 
-```
-Route::get('user',            'user/index');
-Route::post('user/(:any)',    'user/load/$1');
-Route::put('user/(:any),      'user/update/$1');
-Route::delete('user/(:any)',  'user/delete/$1');
-Route::head('user',           'user/index');
-Route::patch('user/(:any),    'user/update/$1');
-```
+* Add a "linkedFiles()" method that will hold an array containing configuration for all the files that could be linked to this object.
 
-The developer also can use two additional methods that will let him work with more than one http verbs at the same time.
+		protected function linkedFiles()
+		{
+			return ['nameOfFieldToAccessFiles' => ExampleFileModel::className(),
+						'file' => AnotherFileModel::className()];
+		}
+		
+Important: You can't have methods inside of this class called "getNameOfFieldToAccessFiles()" or "getFile()" because the system will automatically use them for getting the files via Yii2 relationship between tables.
 
-`any` will let the route work under any HTTP method (GET, POST, PUT, DELETE, HEAD, PATCH),
+## Basic usage
 
-```
-Route::any('user',            'user/index');
-```
+Once the File model it's made, it's time to start using it.
 
-`match` let's the developer to define manually a group of HTTP verbs that will the only ones that respond to this route.
+### Linking a File model to an Owner model
 
-```
-Route::match(['GET', 'POST'], 'user', 'user/index');
-```
+When a file is linked to another object, then this object it's called its "owner", given that now it can access all its files at any time.
 
-### Named routes
+The most simple way to handle this is that the other model is also extending FileOwnerActiveRecord class. That way you can use the syntactic sugar attached to it (remember that it's only an ActiveRecord extension with a couple additions).
 
-Additionally there can be defined a group of additional properties in the basic routing methods.
- 
- One of them it's the route naming, that will let the developer use their defined web url using only it's name instead of use all their chain.
- 
-```
-Route::set_name('user_update', 'admin/user/load/');
+	// we make a new empty file object
+	$file = new ExampleFileModel();
+	$file2 = new AnotherFileModel();
+	
+	// get a loaded object from a class that extends FileOwnerActiveRecord
+	$object = new ImportantObject::findOne(1);
+	
+	// file linked to object. This will be made into the database when launching a save() method for "$file". But remember that you can't save an empty file object.
+	$object->linkFile($file);
+	$object->linkFile($file2);
+	
+Another way of doing a link, recommended when the object doesn't extend FileOwnerActiveRecord class is by:
 
-Route::get('user', 'user/index', ['as' => 'user']);
-```
+	// we make a new empty file object
+	$file = new ExampleFileModel();
+	$file2 = new AnotherFileModel();
+	
+	// get a loaded object from a class that extends FileOwnerActiveRecord
+	$object = new ImportantObject::findOne(1);
+	
+	// Inverse linking a file with an object. 
+	$file->linkOwner($object);
+	$file2->linkOwner($object);
+	
+Also, as seen above, an Owner can have different file object types from different classes linked at the same time.
 
-To get a route url by it's name there is only necessary to
+### Accessing a single file linked to an Owner object (only for FileOwnerActiveRecord extended objects)
 
-```
-echo Route::named('user');
+To access a single file linked to an object (if there are more than one files of a kind linked at the same time, only the first will be retrieved) we will use it's defined name in the class object as a parameter (exactly like when dealing with database relationships in Yii2)
 
-redirect(Route::named('user'));
-```
+	// get a loaded object from a class that extends FileOwnerActiveRecord
+	$object = new ImportantObject::findOne(1);
+	
+	$file = $object->nameOfFieldToAccessFilesOne;
+	$file2 = $object->fileOne;
+	
+Also it's possible to use:
+	
+	// get a loaded object from a class that extends FileOwnerActiveRecord
+	$object = new ImportantObject::findOne(1);
+	
+	$file = $object->nameOfFieldToAccessFiles;
+	$file2 = $object->file;
 
-In case the route has named parameters, it's possible to define values for them in a second parameter of the method `named`
+### Accessing all files linked to an Owner object (only for FileOwnerActiveRecord extended objects)
 
-```
-Route::named('user', ['id' => 12]);
-```
+This will get an array with all the files linked to an owner object:
 
-If the route has optional named parameters without a defined value, they won't be shown in the method's return url string.
+	// get a loaded object from a class that extends FileOwnerActiveRecord
+	$object = new ImportantObject::findOne(1);
+	
+	$file = $object->nameOfFieldToAccessFilesAll;
+	$file2 = $object->fileAll;
 
-### Named parameters
+### Simple web form in Yii 2 with file uploading
 
-It's possible to define named parameters instead of the regular expressions used by Yii2 in the parameter routing system. This will let the developer to use them in getting it's values during the application lifetime.
+(See example directory)
 
-There are two additional defined wildcards, `(:any)` that matches with the regular expression "any character" and `(:num)` that matches with the regex "any number".
+### Multiupload
 
-```
-Route::any('user/{id}',     'user/load');
-```
+It's possible to use this library alongside multiupload libraries thanks to the method "Filemanager::multiUpload" that will return an array with all the files uploaded to a certain FileModel class passed as parameter.
 
-There are two ways of defining named parameters. The global definition, that will assign that regular expression or wildcard to all parameters with that name in all the routes defined in the application, and the local definition, that will only affect the route in which it's defined and will REWRITE any global route with the same name in this route.
+(See example directory for more information).
 
-#### Global definition
+### Saving a file object
 
-```
-Route::pattern('id',        '\d+');
-Route::pattern('name',      '(:any)');
-```
+Besides the "save()" method inherited from ActiveRecord class, there is a new method that saves the file object data called "saveAs" that has two additional parameters:
 
-#### Local definition
+* FileName: string that will define the file name of the file once it's uploaded into its final destination. Be aware that using this option will overwrite previously existing files.
+* Operations: an array defining the operations that will be made to the file once it has been inserted / updated.
 
-```
-Route::any('user/{id}',     'user/load')->where('id', '\d+');
-```
+### Automatic file operations
 
-It's also possible to use arrays in the local definition to assign more than one parameter at the same time.
+Defined as copy operations or in the "saveAs" method, these are automatic operations that will change the file once it has been inserted / updated.
 
-```
-Route::any('user/{id}/{name}',     'user/load')->where(['id' => '\d+', 'name' => '(:any)']);
-```
+They can be defined as an array:
 
-### Optional named routes
-
-There also can be defined optional parameters. This will let Yii2 use the route having or not an URI defined in that position. The definition of optional parameters it's the same as the normal named parameters but adding a question mark `?` in it's definition.
- 
-```
-Route::any('user/{id?}',    'user/load')->where('id', '\d+');
-```
-
-This will make Yii2 to accept the routes "user" and "user/12" having being necessary only one line for that.
-
-It's possible to stack different optional parameters in the same route, being also possible to access all the routes which the different permutations will make.
-
-```
-Route::any('user/{id?}/{name?}',   'user/load');
-```
-
-This will make possible to access to "user/12/john", "user/john", "user/12", "user".
-
-### Getting named parameter values
-
-The route class has also a syntactic sugar method that let access to the parameter values defined in the route.
-
-```
-Route::input('id');
-```
-
-### Route filters
-
-There is also possible to define Yii2 type or manual filters in the Route class. This coexists at the same time with the normal filtering system of Yii2 that defines the filters in the `behaviors` method of each Controller. It's only an additional option that lets the developer to define filters by route level instead of Controllar and Action level. 
-
-There are two types of filters that the developer can use in the routing system. The Yii2 normal filters and a special kind of route that uses closures defined in the user as filters.
-
-#### Yii2 filters
-
-To assign a filter of this type in a route there is only necessary to add an additional entry in the options parameter called `filter`. This will make that, when the route is called, the system will search for this filter and execute it.
-
-```
-Route::any('user/{id}', 'user/load', ['filter' => 'logged_in']);
-```
-
-To define the filter, it's necessary to make an array with the basic data of a normal Yii2 filter and give it a name.
-
-```
-Route::filter('logged_in', [
-		  'class' => \yii\filters\AccessControl::className(),
-		  'except' => [ 'user/default/login'],
-			'rules' => [
-				[
-					'actions' => ['logout'],
-					'allow' => true,
-					'roles' => ['@'],
-				],
-			],
-  ]);
-```
-
-#### Manual filters
-
-Additionally  its possible to define special filters make manually by the developer in the form of anonymous functions or closures that let run Yii2 code inside of them.
-
-To assign a filter of this kind in a route it's necessary to add a new additional entry in the options parameter that can be `before` in the case we want the filter to be launched before the Controller's Action is executed or `after` in case we want to launch it after that.
-
-```
-Route::any('user/{id}', 'user/load', ['before' => 'check_this']);
-```
-
-To define the filter, it's required to make a closure and assign it to the Route class.
-
-```
-Route::filter('check_this', function(){
-				if (Route::input('id') > 12)
-				{
-						throw new \yii\web\NotFoundHttpException(\Yii::t('yii', 'Page not found.'));
-				}
-				else
-				{
-					return TRUE;
-				}
-		});
-```
-
-#### Multiple filters
-
-```
-Route::any('user/{id}', 'user/load', ['before' => ['logged_in', 'check_params']]);
-Route::any('user/{id}', 'user/load', ['filter' => 'logged_in|check_params']);
-```
-
-#### Pattern based filters
-
-You may also specify that a filter applies to an entire set of routes based on their URI.
-
-```
-Route::when('admin\/(.*)', ['filter' =>'logged_in']);
-```
-
-In the example above, the `admin` filter would be applied to all routes beginning with `admin/`.
-
-You may also constrain pattern filters by HTTP verbs:
-
-```
-Route::when('admin\/(.*)', ['filter' =>'logged_in'], [get]);
-```
-
-### Route groups
-
-This lets the developer adding a series of options in a group of routes masively. It's main utility it's to add url prefixes to a group of routes.
-
-```
-Route::group(['prefix' => 'admin', 'filter' => 'logged_in'], function(){
-     Route::post('update/(:any)', 'user/update');
-});
-```
-
-### Subdomain routing
-
-Sometimes an application can give support to some subdomains. For that it's possible to define specific routes for that subdomains.
-
-It's only necessary to define the parameter that will hold the subdomain and the Route class will make the heavy lifting.
-
-```
-Route::any('user/{id}', 'user/load', ['domain' => '{id}']);
-```
-
+	  array['action'	=> 'resize' (crop, etc... there must be a valid yurkinx/image method)
+	 		'height'	=> NULL/pixels,
+	 		'width'		=> NULL/pixels,
+	  		'master'	=> NULL/int, (constrain reduction, defined like:
+	  									const NONE    = no constrain
+										const WIDTH   = reduces by width
+										const HEIGHT  = reduces by height
+										const AUTO    = max reduction
+										const INVERSE = minimum reduction
+										const PRECISE = doesn't keep image ratio)
+	  		'offset_x'	=> NULL/int (offset for cropping only),
+	  		'offset_y'	=> NULL/int (offset for cropping only),
+	  		'size'		=> NULL/bytes
+	  	];

@@ -1,7 +1,7 @@
 <?php
 
 use yii\db\Schema;
-use cyneek\yii2\fileUpload\models\FileModel;
+use cyneek\yii2\fileupload\models\FileModel;
 
 class m141203_185519_fileModel extends  \yii\db\Migration
 {

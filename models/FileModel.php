@@ -454,9 +454,20 @@ class FileModel extends ActiveRecord
 		$this->extension = $this->temporary_file->getExtension();
 
 		// we generate a random string for the file name if file_name it's not defined
+		// if it has been previously defined, it can overwrite an existing file
+		// if not, we will make a new unique fileName.
 		if (is_null($this->file_name))
 		{
 			$this->file_name = Filemanager::getRandomFileName();
+			$file_manager = new Filesystem($this->fileModelAdapter());
+			
+			if ($file_manager->has($this->file))
+			{
+				while ($file_manager->has($this->file) == TRUE)
+				{
+					$this->file_name = Filemanager::getRandomFileName();
+				}
+			}
 		}
 
 		$this->file_size = $this->temporary_file->getSize();
@@ -477,48 +488,20 @@ class FileModel extends ActiveRecord
 			$this->file_order = $max_file_order + 1;
 		}
 		
+		$this->_executeOperations();
+		
 	}
 
 	/**
-	 * Launched every EVENT_BEFORE_UPDATE event.
-	 *
-	 * If there is no uploaded file returns a not valid event and the save() will stop
-	 *
-	 * First calls _prepareFileData and then deletes the old file.
-	 *
-	 * @param Event $event
-	 * @return bool|NULL
+	 * Called before inserting or updating a file.
+	 * 
+	 * Executes the operations stored at $file_operations
+	 * 
+	 * 
+	 * @throws \yii\base\ErrorException
 	 */
-	protected function _preUpdateActions(Event $event)
+	protected function _executeOperations()
 	{
-
-		if ($this->_prepareFileData($event) === FALSE)
-		{
-			return FALSE;
-		}
-
-		$this->updated = 1;
-
-		$old_file = new File($this->oldFile, $this->fileModelAdapter());
-
-		$old_file->delete();
-	}
-
-	/**
-	 * Launched every EVENT_AFTER_INSERT and EVENT_AFTER_UPDATE event.
-	 *
-	 * Called once the data of the object has been inserted into the database
-	 * we move the file from it's uploaded directory into it's final destination
-	 *
-	 * @param Event $event
-	 * @return NULL
-	 */
-	protected function _deployFile(Event $event)
-	{
-		// move the file changing it's name to the id of the file Object
-		$file_manager = new Filesystem($this->fileModelAdapter());
-		
-		
 		// if there is an operation defined for the file, it will be launched here.
 		if (!is_null($this->file_operations) and $this->temporary_file->getIsImage())
 		{
@@ -573,7 +556,52 @@ class FileModel extends ActiveRecord
 					$this->temporary_file = $fileWeightResize;
 				}
 			}
+			
+			// probably the file size will have changed, so we recalculate it
+
+			$this->file_size = $this->temporary_file->getSize();
+			
 		}
+	}
+
+	/**
+	 * Launched every EVENT_BEFORE_UPDATE event.
+	 *
+	 * If there is no uploaded file returns a not valid event and the save() will stop
+	 *
+	 * First calls _prepareFileData and then deletes the old file.
+	 *
+	 * @param Event $event
+	 * @return bool|NULL
+	 */
+	protected function _preUpdateActions(Event $event)
+	{
+
+		if ($this->_prepareFileData($event) === FALSE)
+		{
+			return FALSE;
+		}
+
+		$this->updated = 1;
+
+		$old_file = new File($this->oldFile, $this->fileModelAdapter());
+
+		$old_file->delete();
+	}
+
+	/**
+	 * Launched every EVENT_AFTER_INSERT and EVENT_AFTER_UPDATE event.
+	 *
+	 * Called once the data of the object has been inserted into the database
+	 * we move the file from it's uploaded directory into it's final destination
+	 *
+	 * @param Event $event
+	 * @return NULL
+	 */
+	protected function _deployFile(Event $event)
+	{
+		// move the file changing it's name to the id of the file Object
+		$file_manager = new Filesystem($this->fileModelAdapter());
 		
 		$file_manager->write($this->file, $this->temporary_file->getContent());
 		$this->temporary_file->delete();

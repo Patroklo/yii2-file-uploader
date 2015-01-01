@@ -184,4 +184,34 @@ class FileOwnerActiveRecord extends ActiveRecord
 	{
 		$model->linkOwner($this);
 	}
+	
+	
+	/**
+	 * Adds the possibility of deleting the files that are linked to this object when deleting the object itself 
+	 * 
+	 * @param bool $deleteFiles
+	 * @return bool|int
+	 * @throws \Exception
+	 */
+	public function delete($deleteFiles = FALSE)
+	{
+		if ($deleteFiles == TRUE)
+		{
+			$file_types = $this->linkedFiles();
+			
+			foreach ($file_types as $type => $class)
+			{
+				$fieldName = $type.'All';
+				$file_list = $this->{$fieldName};
+				
+				foreach ($file_list as $file)
+				{
+					$file->delete();
+				}
+				
+			}
+		}
+		
+		return parent::delete();
+	}
 }
