@@ -60,16 +60,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		
 * Update config file _'config/web.php'_
 
-```
-    'modules' => [
-		'fileupload' => [
-            'class' => 'cyneek\yii2\fileupload\Module'
-		]
-		// set custom modules here
-    ],
-```
+		
+			'modules' => [
+				'fileupload' => [
+					'class' => 'cyneek\yii2\fileupload\Module'
+				]
+				// set custom modules here
+			],
+		
 
-* Apply the migration in the migrations directory.
+* Apply the migration in the migrations directory
+	* ```php yii migrate --migrationPath=@vendor/cyneek/yii2-fileupload/migrations```
 * Be sure that Php can write on the "web/" directory of your Yii 2 installation.
 * Profit!
 
