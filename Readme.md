@@ -222,7 +222,7 @@ It's possible to use this library alongside multiupload libraries thanks to the 
 
 ### Saving a file object
 
-Besides the "save()" method inherited from ActiveRecord class, there is a new method that saves the file object data called "saveAs" that has two additional parameters:
+Besides the "save()" method inherited from ActiveRecord class, there is a new method that saves the file object data called "saveAs" with two additional parameters in top of the original save boolean parameter:
 
 * FileName: string that will define the file name of the file once it's uploaded into its final destination. Be aware that using this option will overwrite previously existing files.
 * Operations: an array defining the operations that will be made to the file once it has been inserted / updated.
