@@ -45,7 +45,12 @@ class ExampleUploadModel extends FileModel
 
 	public function _copies_data()
 	{
-		return ['operations' => [['action' => 'resize', 'height' => '100', 'width' => 100, 'size' => 5000]]];
+		return ['operations' => [
+//								'file1' =>  [['action' => 'resize', 'height' => '100', 'width' => 100, 'size' => 5000],
+//								            ['action' => 'crop', 'height' => '50', 'width' => '50', 'offset_x' => 0, 'offset_y' => 0]],
+
+								'file2' => [['action' => 'crop_middle', 'height' => '50', 'width' => 50]]
+								]];
 	}
 
 }

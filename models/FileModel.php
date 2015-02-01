@@ -119,7 +119,17 @@ class FileModel extends ActiveRecord
 	 * 		'offset_x'	=> NULL/int (offset for cropping only),
 	 * 		'offset_y'	=> NULL/int (offset for cropping only),
 	 * 		'size'		=> NULL/bytes
-	 * 
+	 *
+	 * it will be stored this way:
+	 *
+	 *  $file_operations = [
+	 * 							'file' => [[operation_1], [operation_2]],
+	 * 							'file2' => [[operation_3]],
+	 * 							...
+	 * 						]
+	 *
+	 *
+	 *
 	 * @var array
 	 */
 	protected $file_operations;
@@ -505,62 +515,94 @@ class FileModel extends ActiveRecord
 		// if there is an operation defined for the file, it will be launched here.
 		if (!is_null($this->file_operations) and $this->temporary_file->getIsImage())
 		{
-			
-			$image = new \yii\image\drivers\Image_GD($this->temporary_file->getKey());
-			
-			if ($this->file_operations['action'] == 'resize')
+
+			if (!is_array(reset($this->file_operations)))
 			{
-				$height = ((array_key_exists('height', $this->file_operations))?$this->file_operations['height']:NULL);
-				$width = ((array_key_exists('width', $this->file_operations))?$this->file_operations['width']:NULL);
-				$master = ((array_key_exists('master', $this->file_operations))?$this->file_operations['master']:$image::INVERSE);
-				
-				$image->resize($width, $height, $master);
-			}
-			elseif ($this->file_operations['action'] == 'crop')
-			{
-				$height = ((array_key_exists('height', $this->file_operations))?$this->file_operations['height']:NULL);
-				$width = ((array_key_exists('width', $this->file_operations))?$this->file_operations['width']:NULL);
-				$offset_x = ((array_key_exists('offset_x', $this->file_operations))?$this->file_operations['offset_x']:0);
-				$offset_y = ((array_key_exists('offset_y', $this->file_operations))?$this->file_operations['offset_y']:0);
-				
-				$image->resize($width, $height, $offset_x, $offset_y);
-			}
-			else
-			{
-				throw new InvalidCallException('[_deployFile] The method '.$this->file_operations['action'].' does not exist.');
+				$this->file_operations = [$this->file_operations];
 			}
 
-			$image->save();
 
-
-			if (array_key_exists('size', $this->file_operations))
+			foreach ($this->file_operations as $operation)
 			{
-				
-				// PHP doesn't update file sizes after croping/resizing, it weights the same. So we have to do a tweak
-				// to change the file to force PHP to update the file weight by that
-				
-				$fileWeightResize = new File($this->temporary_file->getFileName(), new Local($this->temporary_file->getPath()));
-
-				$quality = 95;
-
-				if ($fileWeightResize->getSize() > $this->file_operations['size'])
+				// checks if image magick is installed on the server
+				// it will use it preferably over GD
+				if(extension_loaded('imagick'))
 				{
-					while (($fileWeightResize->getSize() > $this->file_operations['size']) and $quality > 10)
-					{
-						$image->save(NULL, $quality);
-						$quality = $quality - 5;
-						
-						$fileWeightResize = new File($this->temporary_file->getFileName(), new Local($this->temporary_file->getPath()));
-					}
-					
-					$this->temporary_file = $fileWeightResize;
+					$image = new \yii\image\drivers\Image_Imagick($this->temporary_file->getKey());
 				}
-			}
-			
-			// probably the file size will have changed, so we recalculate it
+				else
+				{
+					$image = new \yii\image\drivers\Image_GD($this->temporary_file->getKey());
+				}
 
-			$this->file_size = $this->temporary_file->getSize();
-			
+				if ($operation['action'] == 'resize')
+				{
+					$height = ((array_key_exists('height', $operation))?$operation['height']:NULL);
+					$width = ((array_key_exists('width', $operation))?$operation['width']:NULL);
+					$master = ((array_key_exists('master', $operation))?$operation['master']:$image::INVERSE);
+
+					$image->resize($width, $height, $master);
+				}
+				elseif ($operation['action'] == 'crop')
+				{
+					$height = ((array_key_exists('height', $operation))?$operation['height']:$image->height);
+					$width = ((array_key_exists('width', $operation))?$operation['width']:$image->width);
+					$offset_x = ((array_key_exists('offset_x', $operation))?$operation['offset_x']:0);
+					$offset_y = ((array_key_exists('offset_y', $operation))?$operation['offset_y']:0);
+
+					$image->crop($width, $height, $offset_x, $offset_y);
+				}
+				elseif ($operation['action'] == 'size')
+				{
+					// it will change the weight of the file, this code will be executed later
+					// so this if clause it's empty
+				}
+				elseif ($operation['action'] == 'crop_middle')
+				{
+					// it will crop the image just in the middle, using only width and height
+
+					$height = ((array_key_exists('height', $operation))?$operation['height']:$image->height);
+					$width = ((array_key_exists('width', $operation))?$operation['width']:$image->width);
+					$offset_x = round(($image->width - $width) / 2);
+					$offset_y = round(($image->height - $height) / 2);
+
+					$image->crop($width, $height, $offset_x, $offset_y);
+				}
+				else
+				{
+					throw new InvalidCallException('[_deployFile] The method '.$operation['action'].' does not exist.');
+				}
+
+				$image->save();
+
+
+				if (array_key_exists('size', $operation))
+				{
+					// PHP doesn't update file sizes after croping/resizing, it weights the same. So we have to do a tweak
+					// to change the file to force PHP to update the file weight by that
+
+					$fileWeightResize = new File($this->temporary_file->getFileName(), new Local($this->temporary_file->getPath()));
+
+					$quality = 95;
+
+					if ($fileWeightResize->getSize() > $operation['size'])
+					{
+						while (($fileWeightResize->getSize() > $operation['size']) and $quality > 10)
+						{
+							$image->save(NULL, $quality);
+							$quality = $quality - 5;
+
+							$fileWeightResize = new File($this->temporary_file->getFileName(), new Local($this->temporary_file->getPath()));
+						}
+
+						$this->temporary_file = $fileWeightResize;
+					}
+				}
+
+				// probably the file size will have changed, so we recalculate it
+
+				$this->file_size = $this->temporary_file->getSize();
+			}
 		}
 	}
 
@@ -637,7 +679,7 @@ class FileModel extends ActiveRecord
 		}
 		elseif (array_key_exists('operations', $copies_data))
 		{
-			foreach ($copies_data['operations'] as $operation)
+			foreach ($copies_data['operations'] as $key => $operation)
 			{
 				$this->makeCopy($operation);
 			}
@@ -741,8 +783,8 @@ class FileModel extends ActiveRecord
 	 * or
 	 * 
 	 * array['operations' => [
-	 * 							[operation_1],
-	 * 							[operation_2],
+	 * 							'file' => [[operation_1], [operation_2]],
+	 * 							'file2' => [[operation_3]],
 	 * 							...
 	 * 						]
 	 * 

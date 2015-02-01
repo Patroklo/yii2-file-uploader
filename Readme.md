@@ -70,7 +70,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		
 
 * Apply the migration in the migrations directory
-	* ```php yii migrate --migrationPath=@vendor/cyneek/yii2-fileupload/migrations```
+> php yii migrate --migrationPath=@vendor/cyneek/yii2-fileupload/migrations
+
 * Be sure that Php can write on the "web/" directory of your Yii 2 installation.
 * Profit!
 
@@ -99,7 +100,7 @@ To be able to use the package, first you must define a model that will manage a 
 
 * Add the following basic configuration data:
 
-	* The "public static function default_values()" method. Must have inside of it a return of an array with a "file_type" string different of every other FileModel that you have ever made in this Yii2 installation and an "upload_path" string that will define the directory where the files will be stored. It's not necessary to be unique, but it's recomended. 
+	* The "default_values()" method. Must have inside of it a return of an array with a "file_type" string different of every other FileModel that you have ever made in this Yii2 installation and an "upload_path" string that will define the directory where the files will be stored. It's not necessary to be unique, but it's recomended. 
 	
 	For example:
 	
@@ -127,6 +128,13 @@ To be able to use the package, first you must define a model that will manage a 
 				];
 				
 	This code will make a copy of the uploaded file (it should be an image) that will be resized to 100x100 mantaining it's ratio (one of the sides won't be exactly of 100 pixels) and will drop it's color quality until it reaches 5000 bytes of weight.
+
+	For example:
+	
+	return 3;
+	
+	It's also possible to define numerals. In this case, the systeml will make 3 exact copies of the uploaded file.
+	
 
 ### Setting a FileOwnerActiveRecord type class
 
@@ -173,7 +181,7 @@ Another way of doing a link, recommended when the object doesn't extend FileOwne
 	$file = new ExampleFileModel();
 	$file2 = new AnotherFileModel();
 	
-	// get a loaded object from a class that extends FileOwnerActiveRecord
+	// get a loaded object from a class that **DOESN'T** extend FileOwnerActiveRecord
 	$object = new ImportantObject::findOne(1);
 	
 	// Inverse linking a file with an object. 
@@ -224,16 +232,56 @@ It's possible to use this library alongside multiupload libraries thanks to the 
 
 Besides the "save()" method inherited from ActiveRecord class, there is a new method that saves the file object data called "saveAs" with two additional parameters in top of the original save boolean parameter:
 
-* FileName: string that will define the file name of the file once it's uploaded into its final destination. Be aware that using this option will overwrite previously existing files.
-* Operations: an array defining the operations that will be made to the file once it has been inserted / updated.
+* FileName: 
+> String that will define the file name of the file once it's uploaded into its final destination. Be aware that using this option will overwrite previously existing files.
+
+* Operations: 
+> An array defining the operations that will be made to the file once it has been inserted / updated.
 
 ### Automatic file operations
 
 Defined as copy operations or in the "saveAs" method, these are automatic operations that will change the file once it has been inserted / updated.
 
-They can be defined as an array:
+It's possible to nest different operations in the same file. This lets the developer to make more complex operations by separating them in multiple simple tasks.
 
-	  array['action'	=> 'resize' (crop, etc... there must be a valid yurkinx/image method)
+* action (string) (obligatory)
+    * resize
+    > Resizes the image to the selected dimensions (height and width)
+    * crop
+    > Crops the image with the selected dimensions (height, width, x start point and y start point) If not start point defined, it will use 0,0.
+    * size
+    > Saves the image with less quality in order to decrease it's weight. It will decrease its quality until it has less size than defined.
+    * crop_middle
+    > Crops the image just in the middle, it's only necessary to define the cropping height and weight. 
+    
+* height (integer) (optional)
+> Defines in pixels the height of the image after its resize-cropping.
+
+* width (integer) (optional)
+> Defines in pixels the width of the image after its resize-cropping.
+
+* master (integer) (optional)
+> Only used with the **resize** action, defines how will be resized the image:
+		const NONE    = no constrain
+		const WIDTH   = reduces by width
+		const HEIGHT  = reduces by height
+		const AUTO    = max reduction
+		const INVERSE = minimum reduction
+		const PRECISE = doesn't keep image ratio)
+		
+* offset_x (integer) (optional) 
+> Defines the starting point in the x axis where the system will start cropping the image.
+
+* offset_y (integer) (optional) 
+> Defines the starting point in the y axis where the system will start cropping the image.
+
+* size (integer) (optional) 
+> In bytes, the maximum file size that can have the image. If it's larger, then the system will lower its quality until it becomes smaller.
+
+
+They will be defined as an array:
+
+	  array['action'	=> 'resize',
 	 		'height'	=> NULL/pixels,
 	 		'width'		=> NULL/pixels,
 	  		'master'	=> NULL/int, (constrain reduction, defined like:
@@ -247,3 +295,8 @@ They can be defined as an array:
 	  		'offset_y'	=> NULL/int (offset for cropping only),
 	  		'size'		=> NULL/bytes
 	  	];
+	  	
+
+### Make a copy of a file
+
+It's also possible to make a copy of the selected file through the method *makeCopy* that accepts the operations array structure as an optional parameter.
