@@ -808,11 +808,11 @@ class FileModel extends ActiveRecord
 	 * @param string $file_name
 	 * @param array $operation
 	 */
-	public function saveAs($validation, $file_name = NULL, $operation = NULL)
+	public function saveAs($runValidation = true, $file_name = NULL, $operation = NULL)
 	{
-		if (is_array($validation))
+		if (is_array($runValidation))
 		{
-			extract($validation);
+			extract($runValidation);
 		}
 		
 		if (! is_null($file_name))
@@ -825,7 +825,7 @@ class FileModel extends ActiveRecord
 			$this->file_operations = $operation;
 		}
 
-		$this->save($validation);
+		$this->save($runValidation);
 	}
 	
 
