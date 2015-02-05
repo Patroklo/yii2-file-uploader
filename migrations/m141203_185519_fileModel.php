@@ -22,6 +22,7 @@ class m141203_185519_fileModel extends  \yii\db\Migration
 			'file_type' => Schema::TYPE_STRING . ' NOT NULL',
 			'record_id'	=> Schema::TYPE_INTEGER. ' NOT NULL',
 			'parent_id' => Schema::TYPE_INTEGER. ' NOT NULL',
+			'child_name' => Schema::TYPE_STRING. ' NULL DEFAULT NULL',
 			'upload_date' => Schema::TYPE_DATETIME. ' NOT NULL',
 			'file_order' => Schema::TYPE_INTEGER. ' NOT NULL',
 			'dir' => Schema::TYPE_STRING . ' NOT NULL',
@@ -36,6 +37,7 @@ class m141203_185519_fileModel extends  \yii\db\Migration
 		], $tableOptions);
 		
 		$this->createIndex(FileModel::tableName() . "_class_id", FileModel::tableName(), "class_id", false);
+		$this->createIndex(FileModel::tableName() . "_child_name", FileModel::tableName(), "child_name", false);
 		$this->createIndex(FileModel::tableName() . "_file_type", FileModel::tableName(), "file_type", false);
 		$this->createIndex(FileModel::tableName() . "_record_id", FileModel::tableName(), "record_id", false);
 		$this->createIndex(FileModel::tableName() . "_user_id", FileModel::tableName(), "user_id", false);

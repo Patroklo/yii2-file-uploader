@@ -44,6 +44,7 @@ use Yii;
  * like images of different sizes, all will reference the main
  * file additionally to its object id
  * @property integer $parent_id
+ * @property string $child_name
  * @property string $upload_date
  * @property integer $file_order
  * @property string $dir
@@ -331,22 +332,38 @@ class FileModel extends ActiveRecord
 	 * Not very useful, only when you are totally sure that there is only one copy of the file, 
 	 * you probably want to use getCopies() instead
 	 * 
+	 * @param string $child_name
 	 * @return \yii\db\ActiveQuery
 	 */
-	public function getCopy()
+	public function getCopy($child_name = NULL)
 	{
-		return $this->hasOne($this::className(), [ 'parent_id' => 'id' ]);
+		$return = $this->hasOne($this::className(), [ 'parent_id' => 'id' ]);
+
+		if (! is_null($child_name))
+		{
+			$return->where(['child_name' => $child_name]);
+		}
+
+		return $return;
 	}
 
 	/**
 	 * Returns all copies that the file have in the system.
 	 * 
-	 * 
+	 *
+	 * @param string|array[string] $child_name
 	 * @return \yii\db\ActiveQuery
 	 */
-	public function getCopies()
+	public function getCopies($child_name = NULL)
 	{
-		return $this->hasMany($this::className(), [ 'parent_id' => 'id' ]);
+		$return = $this->hasMany($this::className(), [ 'parent_id' => 'id' ]);
+
+		if (! is_null($child_name))
+		{
+			$return->where(['child_name' => $child_name]);
+		}
+		
+		return $return;
 	}
 	
 	/**
@@ -378,6 +395,7 @@ class FileModel extends ActiveRecord
 		}
 	}
 
+	
 	/**
 	 * Rules
 	 *
@@ -386,11 +404,11 @@ class FileModel extends ActiveRecord
 	function rules()
 	{
 		$rules = [
-			[['class_id', 'file_type', 'dir', 'file_name', 'mime_type', 'extension', 'file', 'exif'], 'string'],
+			[['class_id', 'child_name', 'file_type', 'dir', 'file_name', 'mime_type', 'extension', 'file', 'exif'], 'string'],
 			[['class_id', 'upload_path'], 'required'],
 			[['record_id', 'parent_id', 'file_order', 'user_id', 'file_size'], 'integer'],
 			[['uploaded_file'], 'file', 'maxFiles' => 1],
-			[['class_id','file_type','record_id','parent_id','upload_date','file_order','dir','file_name','mime_type','extension','file_size','exif','user_id','updated'], 'safe']
+			[['class_id','child_name','file_type','record_id','parent_id','upload_date','file_order','dir','file_name','mime_type','extension','file_size','exif','user_id','updated'], 'safe']
 		];
 
 		if ($this->file_required)
@@ -681,7 +699,7 @@ class FileModel extends ActiveRecord
 		{
 			foreach ($copies_data['operations'] as $key => $operation)
 			{
-				$this->makeCopy($operation);
+				$this->makeCopy($operation, $key);
 			}
 		}
 		
@@ -694,10 +712,11 @@ class FileModel extends ActiveRecord
 	 * 
 	 * The operation can be a crop or resize operations, as defined at $file_operations
 	 * 
+	 * @param null|string $child_name
 	 * @param null|array $operation
 	 * @return FileModel
 	 */
-	public function makeCopy($operation = NULL)
+	public function makeCopy($operation = NULL, $child_name = NULL)
 	{
 		$class = self::className();
 		$original_data = $this->getAttributes();
@@ -728,6 +747,11 @@ class FileModel extends ActiveRecord
 		$model->updated = 0;
 		
 		$model->id = NULL;
+
+		if (! is_null($child_name))
+		{
+			$model->child_name = $child_name;
+		}
 		
 		if (is_null($operation))
 		{

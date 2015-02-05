@@ -125,9 +125,11 @@ To be able to use the package, first you must define a model that will manage a 
 									 'width' => 100, 
 									 'size' => 5000]
 								]
+				'file2' => [ more operations ]
 				];
 				
 	This code will make a copy of the uploaded file (it should be an image) that will be resized to 100x100 mantaining it's ratio (one of the sides won't be exactly of 100 pixels) and will drop it's color quality until it reaches 5000 bytes of weight.
+	Furthermore, the array keys that contain the operations will be used to name the copies in the "child_name" column, which will let the developer to distinguish between the different files more easily.
 
 	For example:
 	
@@ -299,4 +301,11 @@ They will be defined as an array:
 
 ### Make a copy of a file
 
-It's also possible to make a copy of the selected file through the method *makeCopy* that accepts the operations array structure as an optional parameter.
+It's also possible to make a copy of the selected file through the method *makeCopy* that accepts the parameters:
+
+* operations (array) (optional) 
+> File operations as described in the previous point.
+
+* child_name (string) (optional) 
+> A string to name this new copy. This will let the developer to search for specific copies in each file.
+

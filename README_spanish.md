@@ -123,10 +123,12 @@ Para poder usar el paquete, primero hay que definir un modelo que se encargará 
 									 'height' => '100', 
 									 'width' => 100, 
 									 'size' => 5000]
-								]
+								],
+				'file2' => [ more operations ]
 				];
 				
 	Este código hará una copia del fichero subido (en este caso debería ser una imagen) al que se le cambiará el tamaño a 100x100 manteniendo su ratio de aspecto (uno de los lados puede que no llegue a tener exáctamente 100 píxeles) y rebajará la calidad de la imagen hasta que llegue a ocupar 5000 bytes o menos.
+	Además se usarán las keys del array que contiene las operaciones para denominar a estas copias en la columna "child_name", lo que permitirá el distinguir entre los diferentes ficheros de copia.
 
 	Por ejemplo:
 	
@@ -298,4 +300,10 @@ Serán definidas como un array
 
 ### Hacer la copia de un fichero
 
-También es posible hacer la copia del fichero seleccionado a través del método *makeCopy* que acepta una estructura en array de operaciones como parámetro adicional.
+También es posible hacer la copia del fichero seleccionado a través del método *makeCopy* que acepta los siguientes parámetros:
+
+* operations (array) (opcional) 
+> Operaciones sobre ficheros, descritas en el punto anterior.
+
+* child_name (string) (opcional) 
+> Un string para dar nombre a esta nueva copia. Esto permitirá al desarrollador el buscar copias específicas en cada fichero.
