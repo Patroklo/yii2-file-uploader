@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * Install [Yii 2](http://www.yiiframework.com/download)
 * Install package via [composer](http://getcomposer.org/download/) 
 		
-		`"cyneek/yii2-fileupload": "dev-master", "yurkinx/yii2-image": "@dev"`
+		`"cyneek/yii2-fileupload": "dev-master", "coderfly/yii2-image": "@dev"`
 		 
 		(I haven't managed to install the library in stable versions of Yii 2 because image library and the strange way of working composer has. If someone knows how to do it without adding this superfluous reference to the principal composer.json file, please tell :sweat_smile:).
 		

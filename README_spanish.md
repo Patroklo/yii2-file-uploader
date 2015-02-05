@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * Instalar [Yii 2](http://www.yiiframework.com/download)
 * Instalar el paquete vía [composer](http://getcomposer.org/download/)
 		
-		`"cyneek/yii2-fileupload": "dev-master", "yurkinx/yii2-image": "@dev"`
+		`"cyneek/yii2-fileupload": "dev-master", "coderfly/yii2-image": "@dev"`
 		
 		(No he logrado instalar la librería en versiones estables de Yii 2 sin añadir la referencia adicional de yurkinx por la forma extraña de obtener versiones de referencias de composer. Si alguien sabe cómo lograr instalarla sin añadir esta referencia superflua al fichero principal de composer.json, que por favor lo diga :sweat_smile:).
 	
